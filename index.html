@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Maze Runner</title>
+    <title>Emoji Maze Runner v2</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,40 +12,80 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f0f0;
+            background-color: #e0f0ff;
         }
         #game-container {
             text-align: center;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         #maze {
-            font-size: 24px;
-            line-height: 1;
+            font-size: 28px;
+            line-height: 1.2;
             white-space: pre;
             font-family: monospace;
+            margin-bottom: 20px;
+        }
+        #moves {
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        #reset-btn {
+            font-size: 16px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #reset-btn:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <h1>Emoji Maze Runner</h1>
+        <h1>Emoji Maze Runner v2</h1>
         <div id="maze"></div>
+        <div id="moves">Moves: 0</div>
         <p>Use arrow keys to move</p>
+        <button id="reset-btn">Reset Game</button>
     </div>
     <script>
-        const maze = [
-            "🌳🌳🌳🌳🌳",
-            "🌳😊  🌳🌳",
-            "🌳🌳  🌳🌳",
-            "🌳    🌳🌳",
-            "🌳🌳🎁🌳🌳"
+        const mazeTemplate = [
+            "🌳🌳🌳🌳🌳🌳🌳",
+            "🌳😊    🌳🌳",
+            "🌳🌳🌳  🌳🌳",
+            "🌳      🌳🌳",
+            "🌳  🌳🌳🌳🌳",
+            "🌳    🎁🌳🌳",
+            "🌳🌳🌳🌳🌳🌳🌳"
         ];
 
+        let maze;
         let playerX = 1;
         let playerY = 1;
+        let moves = 0;
+
+        function initGame() {
+            maze = JSON.parse(JSON.stringify(mazeTemplate));
+            playerX = 1;
+            playerY = 1;
+            moves = 0;
+            updateMovesDisplay();
+            drawMaze();
+        }
 
         function drawMaze() {
             const mazeElement = document.getElementById("maze");
             mazeElement.textContent = maze.join("\n");
+        }
+
+        function updateMovesDisplay() {
+            document.getElementById("moves").textContent = `Moves: ${moves}`;
         }
 
         function movePlayer(dx, dy) {
@@ -58,10 +98,15 @@
                     playerX = newX;
                     playerY = newY;
                     maze[playerY] = maze[playerY].substring(0, playerX) + "😊" + maze[playerY].substring(playerX + 1);
+                    moves++;
+                    updateMovesDisplay();
                     drawMaze();
 
                     if (maze[playerY][playerX] === "🎁") {
-                        alert("Congratulations! You won!");
+                        setTimeout(() => {
+                            alert(`Congratulations! You won in ${moves} moves!`);
+                            initGame();
+                        }, 100);
                     }
                 }
             }
@@ -84,7 +129,9 @@
             }
         });
 
-        drawMaze();
+        document.getElementById("reset-btn").addEventListener("click", initGame);
+
+        initGame();
     </script>
 </body>
 </html>
