@@ -3,89 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Maze Runner v2</title>
+    <title>Emoji Maze Runner v3</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #e0f0ff;
+            background: linear-gradient(135deg, #83a4d4, #b6fbff);
         }
         #game-container {
             text-align: center;
-            background-color: #ffffff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        #game-container:hover {
+            transform: scale(1.02);
         }
         #maze {
-            font-size: 28px;
-            line-height: 1.2;
+            font-size: 32px;
+            line-height: 1;
             white-space: pre;
             font-family: monospace;
             margin-bottom: 20px;
+            user-select: none;
         }
-        #moves {
+        #moves, #timer {
             font-size: 18px;
             margin-bottom: 10px;
         }
-        #reset-btn {
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
             font-size: 16px;
-            padding: 8px 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        #reset-btn {
             background-color: #4CAF50;
             color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
         }
         #reset-btn:hover {
             background-color: #45a049;
+        }
+        #hint-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        #hint-btn:hover {
+            background-color: #2980b9;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .player {
+            animation: pulse 0.5s infinite;
+        }
+        .goal {
+            animation: pulse 1s infinite;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <h1>Emoji Maze Runner v2</h1>
+        <h1>Emoji Maze Runner v3</h1>
         <div id="maze"></div>
         <div id="moves">Moves: 0</div>
+        <div id="timer">Time: 0s</div>
         <p>Use arrow keys to move</p>
-        <button id="reset-btn">Reset Game</button>
+        <div id="controls">
+            <button id="reset-btn" class="btn">Reset Game</button>
+            <button id="hint-btn" class="btn">Show Hint</button>
+        </div>
     </div>
     <script>
         const mazeTemplate = [
-            "🌳🌳🌳🌳🌳🌳🌳",
-            "🌳😊    🌳🌳",
-            "🌳🌳🌳  🌳🌳",
-            "🌳      🌳🌳",
-            "🌳  🌳🌳🌳🌳",
-            "🌳    🎁🌳🌳",
-            "🌳🌳🌳🌳🌳🌳🌳"
+            "🌲🌲🌲🌲🌲🌲🌲🌲🌲",
+            "🌲😊  🌲    🌲🌲",
+            "🌲🌲  🌲  🌲  🌲",
+            "🌲    🌲    🌲🌲",
+            "🌲  🌲🌲🌲🌲  🌲🌲",
+            "🌲        🌲  🌲",
+            "🌲🌲  🌲🌲🌲  🎁🌲",
+            "🌲🌲🌲🌲🌲🌲🌲🌲🌲"
         ];
 
         let maze;
         let playerX = 1;
         let playerY = 1;
         let moves = 0;
+        let timer;
+        let seconds = 0;
 
         function initGame() {
             maze = JSON.parse(JSON.stringify(mazeTemplate));
             playerX = 1;
             playerY = 1;
             moves = 0;
+            seconds = 0;
             updateMovesDisplay();
+            updateTimerDisplay();
+            clearInterval(timer);
+            timer = setInterval(updateTimer, 1000);
             drawMaze();
         }
 
         function drawMaze() {
             const mazeElement = document.getElementById("maze");
-            mazeElement.textContent = maze.join("\n");
+            mazeElement.innerHTML = maze.map((row, y) => 
+                row.split('').map((cell, x) => {
+                    if (x === playerX && y === playerY) {
+                        return `<span class="player">${cell}</span>`;
+                    } else if (cell === '🎁') {
+                        return `<span class="goal">${cell}</span>`;
+                    }
+                    return cell;
+                }).join('')
+            ).join('<br>');
         }
 
         function updateMovesDisplay() {
             document.getElementById("moves").textContent = `Moves: ${moves}`;
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById("timer").textContent = `Time: ${seconds}s`;
+        }
+
+        function updateTimer() {
+            seconds++;
+            updateTimerDisplay();
         }
 
         function movePlayer(dx, dy) {
@@ -93,8 +154,8 @@
             const newY = playerY + dy;
 
             if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length) {
-                if (maze[newY][newX] !== "🌳") {
-                    maze[playerY] = maze[playerY].substring(0, playerX) + " " + maze[playerY].substring(playerX + 1);
+                if (maze[newY][newX] !== "🌲") {
+                    maze[playerY] = maze[playerY].substring(0, playerX) + "  " + maze[playerY].substring(playerX + 2);
                     playerX = newX;
                     playerY = newY;
                     maze[playerY] = maze[playerY].substring(0, playerX) + "😊" + maze[playerY].substring(playerX + 1);
@@ -103,8 +164,9 @@
                     drawMaze();
 
                     if (maze[playerY][playerX] === "🎁") {
+                        clearInterval(timer);
                         setTimeout(() => {
-                            alert(`Congratulations! You won in ${moves} moves!`);
+                            alert(`Congratulations! You won in ${moves} moves and ${seconds} seconds!`);
                             initGame();
                         }, 100);
                     }
@@ -114,22 +176,18 @@
 
         document.addEventListener("keydown", (event) => {
             switch (event.key) {
-                case "ArrowUp":
-                    movePlayer(0, -1);
-                    break;
-                case "ArrowDown":
-                    movePlayer(0, 1);
-                    break;
-                case "ArrowLeft":
-                    movePlayer(-1, 0);
-                    break;
-                case "ArrowRight":
-                    movePlayer(1, 0);
-                    break;
+                case "ArrowUp": movePlayer(0, -1); break;
+                case "ArrowDown": movePlayer(0, 1); break;
+                case "ArrowLeft": movePlayer(-1, 0); break;
+                case "ArrowRight": movePlayer(1, 0); break;
             }
         });
 
         document.getElementById("reset-btn").addEventListener("click", initGame);
+
+        document.getElementById("hint-btn").addEventListener("click", () => {
+            alert("Hint: The path to the goal is through the center of the maze!");
+        });
 
         initGame();
     </script>
