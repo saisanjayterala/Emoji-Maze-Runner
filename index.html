@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Maze Runner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-container {
+            text-align: center;
+        }
+        #maze {
+            font-size: 24px;
+            line-height: 1;
+            white-space: pre;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>Emoji Maze Runner</h1>
+        <div id="maze"></div>
+        <p>Use arrow keys to move</p>
+    </div>
+    <script>
+        const maze = [
+            "🌳🌳🌳🌳🌳",
+            "🌳😊  🌳🌳",
+            "🌳🌳  🌳🌳",
+            "🌳    🌳🌳",
+            "🌳🌳🎁🌳🌳"
+        ];
+
+        let playerX = 1;
+        let playerY = 1;
+
+        function drawMaze() {
+            const mazeElement = document.getElementById("maze");
+            mazeElement.textContent = maze.join("\n");
+        }
+
+        function movePlayer(dx, dy) {
+            const newX = playerX + dx;
+            const newY = playerY + dy;
+
+            if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length) {
+                if (maze[newY][newX] !== "🌳") {
+                    maze[playerY] = maze[playerY].substring(0, playerX) + " " + maze[playerY].substring(playerX + 1);
+                    playerX = newX;
+                    playerY = newY;
+                    maze[playerY] = maze[playerY].substring(0, playerX) + "😊" + maze[playerY].substring(playerX + 1);
+                    drawMaze();
+
+                    if (maze[playerY][playerX] === "🎁") {
+                        alert("Congratulations! You won!");
+                    }
+                }
+            }
+        }
+
+        document.addEventListener("keydown", (event) => {
+            switch (event.key) {
+                case "ArrowUp":
+                    movePlayer(0, -1);
+                    break;
+                case "ArrowDown":
+                    movePlayer(0, 1);
+                    break;
+                case "ArrowLeft":
+                    movePlayer(-1, 0);
+                    break;
+                case "ArrowRight":
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+
+        drawMaze();
+    </script>
+</body>
+</html>
