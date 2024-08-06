@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Emoji Maze Runner v3</title>
+    <title>Emoji Maze Runner v5</title>
     <style>
         body {
             font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;
@@ -13,6 +13,7 @@
             height: 100vh;
             margin: 0;
             background: linear-gradient(135deg, #83a4d4, #b6fbff);
+            overflow: hidden;
         }
         #game-container {
             text-align: center;
@@ -21,27 +22,35 @@
             border-radius: 15px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
             transition: all 0.3s ease;
+            max-width: 90vw;
         }
         #game-container:hover {
             transform: scale(1.02);
         }
         #maze {
-            font-size: 32px;
+            font-size: 28px;
             line-height: 1;
             white-space: pre;
             font-family: monospace;
             margin-bottom: 20px;
             user-select: none;
+            overflow-x: auto;
         }
-        #moves, #timer {
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+        .stat {
             font-size: 18px;
-            margin-bottom: 10px;
+            font-weight: bold;
         }
         #controls {
             display: flex;
             justify-content: center;
             gap: 10px;
             margin-top: 20px;
+            flex-wrap: wrap;
         }
         .btn {
             font-size: 16px;
@@ -51,102 +60,118 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        #reset-btn {
-            background-color: #4CAF50;
-            color: white;
-        }
-        #reset-btn:hover {
-            background-color: #45a049;
-        }
-        #hint-btn {
-            background-color: #3498db;
-            color: white;
-        }
-        #hint-btn:hover {
-            background-color: #2980b9;
-        }
+        #reset-btn { background-color: #4CAF50; color: white; }
+        #reset-btn:hover { background-color: #45a049; }
+        #hint-btn { background-color: #3498db; color: white; }
+        #hint-btn:hover { background-color: #2980b9; }
+        #level-btn { background-color: #f39c12; color: white; }
+        #level-btn:hover { background-color: #e67e22; }
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.1); }
             100% { transform: scale(1); }
         }
-        .player {
-            animation: pulse 0.5s infinite;
+        .player { animation: pulse 0.5s infinite; }
+        .goal { animation: pulse 1s infinite; }
+        #message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            display: none;
         }
-        .goal {
-            animation: pulse 1s infinite;
+        #powerup {
+            font-size: 24px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <h1>Emoji Maze Runner v3</h1>
+        <h1>Emoji Maze Runner v5</h1>
         <div id="maze"></div>
-        <div id="moves">Moves: 0</div>
-        <div id="timer">Time: 0s</div>
+        <div id="stats">
+            <div class="stat" id="moves">Moves: 0</div>
+            <div class="stat" id="timer">Time: 0s</div>
+            <div class="stat" id="level">Level: 1</div>
+        </div>
+        <div id="powerup">Power-up: None</div>
         <p>Use arrow keys to move</p>
         <div id="controls">
             <button id="reset-btn" class="btn">Reset Game</button>
             <button id="hint-btn" class="btn">Show Hint</button>
+            <button id="level-btn" class="btn">Next Level</button>
         </div>
     </div>
+    <div id="message"></div>
     <script>
-        const mazeTemplate = [
-            "🌲🌲🌲🌲🌲🌲🌲🌲🌲",
-            "🌲😊  🌲    🌲🌲",
-            "🌲🌲  🌲  🌲  🌲",
-            "🌲    🌲    🌲🌲",
-            "🌲  🌲🌲🌲🌲  🌲🌲",
-            "🌲        🌲  🌲",
-            "🌲🌲  🌲🌲🌲  🎁🌲",
-            "🌲🌲🌲🌲🌲🌲🌲🌲🌲"
+        const levels = [
+            [
+                "🌲🌲🌲🌲🌲🌲🌲🌲🌲",
+                "🌲😊  🌲    🌲🌲",
+                "🌲🌲  🌲  🌲  🌲",
+                "🌲    🌲    🌲🌲",
+                "🌲  🌲🌲🌲🌲  🌲🌲",
+                "🌲        🌲  🌲",
+                "🌲🌲  🌲🌲🌲  🎁🌲",
+                "🌲🌲🌲🌲🌲🌲🌲🌲🌲"
+            ],
+            [
+                "🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲",
+                "🌲😊    🌲      🌲",
+                "🌲🌲🌲  🌲  🌲🌲  🌲",
+                "🌲    🌲  🌲  ⚡ 🌲",
+                "🌲  🌲🌲🌲🌲  🌲🌲🌲",
+                "🌲    🌲      🌲🌲",
+                "🌲🌲  🌲  🌲🌲  🎁🌲",
+                "🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲🌲"
+            ]
         ];
 
-        let maze;
-        let playerX = 1;
-        let playerY = 1;
-        let moves = 0;
-        let timer;
-        let seconds = 0;
+        let maze, playerX, playerY, moves, timer, seconds, currentLevel = 0;
+        let hasPowerup = false;
 
         function initGame() {
-            maze = JSON.parse(JSON.stringify(mazeTemplate));
-            playerX = 1;
-            playerY = 1;
+            maze = JSON.parse(JSON.stringify(levels[currentLevel]));
+            playerY = maze.findIndex(row => row.includes("😊"));
+            playerX = maze[playerY].indexOf("😊");
             moves = 0;
             seconds = 0;
-            updateMovesDisplay();
-            updateTimerDisplay();
+            hasPowerup = false;
+            updateStats();
             clearInterval(timer);
             timer = setInterval(updateTimer, 1000);
             drawMaze();
+            updatePowerupDisplay();
         }
 
         function drawMaze() {
-            const mazeElement = document.getElementById("maze");
-            mazeElement.innerHTML = maze.map((row, y) => 
+            document.getElementById("maze").innerHTML = maze.map((row, y) => 
                 row.split('').map((cell, x) => {
-                    if (x === playerX && y === playerY) {
-                        return `<span class="player">${cell}</span>`;
-                    } else if (cell === '🎁') {
-                        return `<span class="goal">${cell}</span>`;
-                    }
+                    if (x === playerX && y === playerY) return `<span class="player">${cell}</span>`;
+                    if (cell === '🎁') return `<span class="goal">${cell}</span>`;
                     return cell;
                 }).join('')
             ).join('<br>');
         }
 
-        function updateMovesDisplay() {
+        function updateStats() {
             document.getElementById("moves").textContent = `Moves: ${moves}`;
-        }
-
-        function updateTimerDisplay() {
             document.getElementById("timer").textContent = `Time: ${seconds}s`;
+            document.getElementById("level").textContent = `Level: ${currentLevel + 1}`;
         }
 
         function updateTimer() {
             seconds++;
-            updateTimerDisplay();
+            updateStats();
+        }
+
+        function updatePowerupDisplay() {
+            document.getElementById("powerup").textContent = `Power-up: ${hasPowerup ? "⚡ Speed Boost" : "None"}`;
         }
 
         function movePlayer(dx, dy) {
@@ -155,18 +180,26 @@
 
             if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length) {
                 if (maze[newY][newX] !== "🌲") {
-                    maze[playerY] = maze[playerY].substring(0, playerX) + "  " + maze[playerY].substring(playerX + 2);
+                    maze[playerY] = maze[playerY].substring(0, playerX) + "  " + maze[playerY].substring(playerX + 1);
                     playerX = newX;
                     playerY = newY;
+
+                    if (maze[playerY][playerX] === "⚡") {
+                        hasPowerup = true;
+                        showMessage("Speed boost activated!");
+                        updatePowerupDisplay();
+                    }
+
                     maze[playerY] = maze[playerY].substring(0, playerX) + "😊" + maze[playerY].substring(playerX + 1);
                     moves++;
-                    updateMovesDisplay();
+                    updateStats();
                     drawMaze();
 
                     if (maze[playerY][playerX] === "🎁") {
                         clearInterval(timer);
                         setTimeout(() => {
-                            alert(`Congratulations! You won in ${moves} moves and ${seconds} seconds!`);
+                            alert(`Level ${currentLevel + 1} completed in ${moves} moves and ${seconds} seconds!`);
+                            currentLevel = (currentLevel + 1) % levels.length;
                             initGame();
                         }, 100);
                     }
@@ -174,7 +207,15 @@
             }
         }
 
+        function showMessage(msg) {
+            const messageEl = document.getElementById("message");
+            messageEl.textContent = msg;
+            messageEl.style.display = "block";
+            setTimeout(() => { messageEl.style.display = "none"; }, 2000);
+        }
+
         document.addEventListener("keydown", (event) => {
+            const moveDistance = hasPowerup ? 2 : 1;
             switch (event.key) {
                 case "ArrowUp": movePlayer(0, -1); break;
                 case "ArrowDown": movePlayer(0, 1); break;
@@ -184,9 +225,12 @@
         });
 
         document.getElementById("reset-btn").addEventListener("click", initGame);
-
         document.getElementById("hint-btn").addEventListener("click", () => {
-            alert("Hint: The path to the goal is through the center of the maze!");
+            showMessage("Hint: Look for the power-up to move faster!");
+        });
+        document.getElementById("level-btn").addEventListener("click", () => {
+            currentLevel = (currentLevel + 1) % levels.length;
+            initGame();
         });
 
         initGame();
